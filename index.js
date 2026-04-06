@@ -75,7 +75,7 @@ bot.on('message', async (msg) => {
 
   } catch (err) {
     bot.sendMessage(OWNER_ID,
-      '⚠️ خطأ في الاتصال — جاري إعادة المحاولة');
+  `⚠️ خطأ: ${err.response?.data?.error?.message || err.message}`);
   }
 });
 
