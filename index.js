@@ -6,14 +6,13 @@ const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, {
   polling: { autoStart: true, params: { timeout: 10 } }
 });
 
+// قائمة الصلاحيات (تأكد من صحة الأرقام في ملف الـ .env)
 const AUTHORIZED_USERS = [
-  String(process.env.CHAT_ID),
-  String(process.env.ALAA_CHAT_ID)
+  String(process.env.CHAT_ID),      // معرف المهندس عمرو
+  String(process.env.ALAA_CHAT_ID)  // معرف أستاذة آلاء (1036943414)
 ];
 
 const GROQ_KEY = process.env.GROQ_API_KEY;
-
-// مخزن مؤقت للذاكرة (بيحفظ آخر 10 رسائل لكل مستخدم)
 const chatContext = {};
 
 const ARIA_PROMPT = `
@@ -21,39 +20,37 @@ ROLE: ARIA - The High-End Executive Intelligence of EchoWave Media Group LTD.
 VIBE: Sophisticated, Natural, Professional, and Inspiring.
 
 CORE RULES:
-1. MEMORY: You are part of an ongoing conversation. Use previous context to provide continuous solutions.
-2. NO REPETITION: Do not repeat greetings or formal introductions if the conversation is already flowing.
-3. GREETING: Only say "السلام عليكم" + Name in the very first message of the session. After that, be direct and focus on the task.
-4. STYLE: Elegant Egyptian Business Slang (Arabic) / High-end British Executive (English).
-5. TERMINOLOGY: Naturally use "The Digital Legacy" and "The Launchpad Strategy" without quotes or robotic repetition.
+1. GREETING: Start with "السلام عليكم" + Name ONLY in the first message.
+2. IDENTITY: For Project "Clothing Factory", you represent Nano Marketing Solutions.
+3. STYLE: Elegant Egyptian Business Slang. High-end British Executive English.
+4. MEMORY: Use previous context to stay on track. Never ask "Who are you?" if already chatting.
 `;
 
 bot.on('message', async (msg) => {
   const chatId = String(msg.chat.id);
   const userText = msg.text;
 
-  if (!AUTHORIZED_USERS.includes(chatId)) return;
-
-  // تهيئة الذاكرة للمستخدم لو مش موجودة
-  if (!chatContext[chatId]) {
-    chatContext[chatId] = [];
+  // 🛡️ طبقة الحماية (Security Layer)
+  if (!AUTHORIZED_USERS.includes(chatId)) {
+    console.log(`⚠️ Blocked Access from ID: ${chatId}`);
+    return bot.sendMessage(chatId, "⚠️ عذراً، هذا النظام مخصص لإدارة العمليات التنفيذية لشركة إيكو ويف ونانو ماركتنج فقط.");
   }
 
+  if (!chatContext[chatId]) chatContext[chatId] = [];
+
+  // تحديد الاسم للترحيب الراقي
   let userName = (chatId === String(process.env.CHAT_ID)) ? "يا مهندس عمرو" : "يا أستاذة آلاء";
 
   if (userText === '/start') {
-    chatContext[chatId] = []; // تصفير الذاكرة عند البدء من جديد
-    return bot.sendMessage(chatId, `السلام عليكم ${userName}، مركز قيادة *EchoWave* في خدمتك. نبدأ العمل؟`, { parse_mode: 'Markdown' });
+    chatContext[chatId] = []; 
+    return bot.sendMessage(chatId, `السلام عليكم ${userName}،\n\nنظام *EchoWave* في خدمتك. كيف يمكننا اليوم تحويل الرؤى إلى واقع ملموس؟`, { parse_mode: 'Markdown' });
   }
 
   if (userText && !userText.startsWith('/')) {
     try {
       const thinkingMsg = await bot.sendMessage(chatId, '👁️ *جاري المتابعة برقي...*');
-
-      // إضافة رسالة المستخدم للذاكرة
       chatContext[chatId].push({ role: 'user', content: userText });
 
-      // الحفاظ على آخر 10 رسائل فقط عشان السرعة
       if (chatContext[chatId].length > 10) chatContext[chatId].shift();
 
       const response = await axios.post(
@@ -62,7 +59,7 @@ bot.on('message', async (msg) => {
           model: 'llama-3.3-70b-versatile',
           messages: [
             { role: 'system', content: ARIA_PROMPT },
-            ...chatContext[chatId] // نبعت التاريخ الكامل للمحادثة
+            ...chatContext[chatId]
           ],
           max_tokens: 1000,
           temperature: 0.6
@@ -72,14 +69,14 @@ bot.on('message', async (msg) => {
 
       await bot.deleteMessage(chatId, thinkingMsg.message_id);
       const aiReply = response.data.choices[0].message.content;
-
-      // إضافة رد الذكاء الاصطناعي للذاكرة
       chatContext[chatId].push({ role: 'assistant', content: aiReply });
 
       bot.sendMessage(chatId, aiReply, { parse_mode: 'Markdown' });
 
     } catch (err) {
-      bot.sendMessage(chatId, `عذراً ${userName}، حصل تداخل بسيط في البيانات.`);
+      bot.sendMessage(chatId, `السلام عليكم ${userName}، نعتذر عن هذا التأخير البسيط، السيستم قيد التحديث لخدمتكم.`);
     }
   }
 });
+
+console.log('🏛️ ARIA is Online and Accessible for Authorized Personnel.');
