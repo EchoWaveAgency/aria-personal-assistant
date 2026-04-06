@@ -74,7 +74,7 @@ bot.on('message', async (msg) => {
       { parse_mode: 'Markdown' });
 
   } catch (err) {
-    bot.sendMessage(OWNER_ID,
+   bot.sendMessage(OWNER_ID,
   `⚠️ خطأ: ${err.response?.data?.error?.message || err.message}`);
   }
 });
