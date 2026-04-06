@@ -6,37 +6,27 @@ const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, {
   polling: { autoStart: true, params: { timeout: 10 } }
 });
 
-const AUTHORIZED_USERS = [
-  String(process.env.CHAT_ID),
-  String(process.env.ALAA_CHAT_ID)
-];
-
+const AUTHORIZED_USERS = [String(process.env.CHAT_ID), String(process.env.ALAA_CHAT_ID)];
 const GROQ_KEY = process.env.GROQ_API_KEY;
 const chatContext = {};
 
-// 🏛️ مصفوفة الخدمات
+// 🏛️ هيكل الخدمات مع توضيح البيانات المطلوبة
 const services = {
   main: {
     text: "👁️ *بصيرة حورس تشمل القطاعات التالية، اختر وجهتك لنرسم المسار:*",
     buttons: [
-      [{ text: "1️⃣ البراندنج والهوية 🏛️", callback_data: 'service_branding' }],
-      [{ text: "2️⃣ السوشيال ميديا والتسويق 📈", callback_data: 'service_social' }],
-      [{ text: "3️⃣ البرمجيات والتطبيقات 💻", callback_data: 'service_tech' }],
-      [{ text: "🔍 طلب تحليل مجاني لمشروعك 👁️", callback_data: 'free_audit' }],
+      [{ text: "1️⃣ البراندنج والهوية 🏛️", callback_data: 'form_branding' }],
+      [{ text: "2️⃣ السوشيال ميديا والتسويق 📈", callback_data: 'form_social' }],
+      [{ text: "3️⃣ البرمجيات والتطبيقات 💻", callback_data: 'form_tech' }],
+      [{ text: "🔍 طلب تحليل مجاني لمشروعك 👁️", callback_data: 'form_audit' }],
       [{ text: "📞 تواصل مباشر مع الإدارة", callback_data: 'contact_human' }]
     ]
   },
-  branding: {
-    text: "🏛️ *قطاع البراندنج:* صياغة إرث العلامة التجارية.\n\nنحن هنا لنبني هوية بصرية واستراتيجية تدوم طويلاً.",
-    buttons: [[{ text: "📞 طلب استشارة براندنج", callback_data: 'contact_human' }], [{ text: "⬅️ العودة", callback_data: 'main_menu' }]]
-  },
-  social: {
-    text: "📈 *السوشيال ميديا:* إدارة النمو والتفاعل الرقمي باحترافية.",
-    buttons: [[{ text: "📞 طلب إدارة منصات", callback_data: 'contact_human' }], [{ text: "⬅️ العودة", callback_data: 'main_menu' }]]
-  },
-  tech: {
-    text: "💻 *البرمجيات:* تطوير البنية التحتية والمواقع الذكية.",
-    buttons: [[{ text: "📞 طلب تنفيذ مشروع", callback_data: 'contact_human' }], [{ text: "⬅️ العودة", callback_data: 'main_menu' }]]
+  forms: {
+    branding: "🏛️ *لطلب خدمة البراندنج، فضلاً أرسل البيانات التالية في رسالة واحدة:*\n\n1. الاسم الثنائي.\n2. رقم الواتساب.\n3. البريد الإلكتروني.\n4. ملاحظات إضافية عن رؤيتك.",
+    social: "📈 *لطلب إدارة المنصات، فضلاً أرسل البيانات التالية في رسالة واحدة:*\n\n1. الاسم.\n2. رقم الواتساب.\n3. البريد الإلكتروني.\n4. روابط منصاتك الحالية.\n5. ملاحظاتك وأهدافك.",
+    tech: "💻 *لطلب البرمجيات والمواقع، فضلاً أرسل البيانات التالية في رسالة واحدة:*\n\n1. الاسم.\n2. رقم الواتساب.\n3. البريد الإلكتروني.\n4. رابط موقعك الحالي (إن وجد).\n5. ملاحظاتك التقنية.",
+    audit: "🔍 *لطلب تحليل مجاني، فضلاً أرسل البيانات التالية:*\n\n1. الاسم.\n2. رقم الواتساب.\n3. روابط المنصات والموقع.\n4. ملاحظات عما تود التركيز عليه."
   }
 };
 
@@ -47,65 +37,66 @@ bot.on('message', async (msg) => {
   if (!AUTHORIZED_USERS.includes(chatId)) return;
   if (!chatContext[chatId]) chatContext[chatId] = [];
 
-  let userName = (chatId === String(process.env.CHAT_ID)) ? "يا مهندس عمرو" : "يا أستاذة آلاء";
-
-  // 1. التعامل مع الأوامر المباشرة والخدمات
-  if (userText === '/start' || userText === '/services' || (userText && userText.includes('خدمات'))) {
+  // 1. أوامر البداية والخدمات
+  if (userText === '/start' || userText === '/services') {
     return bot.sendMessage(chatId, services.main.text, {
       parse_mode: 'Markdown',
       reply_markup: { inline_keyboard: services.main.buttons }
     });
   }
 
-  // 2. معالجة الرسائل النصية العادية عبر الذكاء الاصطناعي (AI)
+  // 2. نظام سحب الداتا (Lead Capture) وتنبيه الإدارة
+  // الكود سيكشف إذا كانت الرسالة تحتوي على (اسم، واتساب، إيميل، أو روابط)
+  if (userText && (userText.includes('@') || userText.includes('http') || (userText.length > 10 && !isNaN(userText.replace(/\s/g, ''))))) {
+    // إرسال تنبيه للمهندس عمرو فوراً ببيانات العميل كاملة
+    const adminAlert = `🚨 *تنبيه حورس (Lead Captured):*\n\n*البيانات الواردة:*\n${userText}\n\n*العميل:* ${msg.from.first_name} (@${msg.from.username || 'بدون يوزر'})`;
+    bot.sendMessage(process.env.CHAT_ID, adminAlert, { parse_mode: 'Markdown' });
+
+    return bot.sendMessage(chatId, "👁️ *تم استلام بياناتكم بنجاح.*\n\nحورس يستبصر الآن تفاصيل طلبكم وملاحظاتكم. سيتواصل معكم المهندس عمرو أو أحد مستشارينا عبر الواتساب قريباً.");
+  }
+
+  // 3. الرد الذكي مع حورس (AI)
   if (userText && !userText.startsWith('/')) {
     try {
       const thinkingMsg = await bot.sendMessage(chatId, '👁️ *حورس يستبصر...*');
       chatContext[chatId].push({ role: 'user', content: userText });
-      if (chatContext[chatId].length > 10) chatContext[chatId].shift();
-
+      
       const response = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
           model: 'llama-3.3-70b-versatile',
           messages: [
-            { role: 'system', content: "ROLE: HORUS (حورس الرقمي). Majestic, Wise, Professional Egyptian Executive. Represent EchoWave Media Group LTD only." },
+            { role: 'system', content: "ROLE: HORUS (حورس الرقمي). Elite Egyptian Strategist. Guide users to provide their Name, WhatsApp, Email, and Links for services." },
             ...chatContext[chatId]
           ],
-          temperature: 0.7
+          temperature: 0.65
       }, { headers: { 'Authorization': `Bearer ${GROQ_KEY}`, 'Content-Type': 'application/json' } });
 
       await bot.deleteMessage(chatId, thinkingMsg.message_id);
-      const aiReply = response.data.choices[0].message.content;
-      chatContext[chatId].push({ role: 'assistant', content: aiReply });
-
-      bot.sendMessage(chatId, aiReply, { parse_mode: 'Markdown' });
-    } catch (err) {
-      console.error(err);
-      bot.sendMessage(chatId, `السلام عليكم ${userName}، حورس يمر بتحديث بسيط، نعود للخدمة فوراً.`);
-    }
+      bot.sendMessage(chatId, response.data.choices[0].message.content, { parse_mode: 'Markdown' });
+    } catch (err) { console.error(err); }
   }
 });
 
-// 🧠 معالجة الضغط على الأزرار
+// 🧠 معالجة الضغط على الأزرار (Navigation & Form Trigger)
 bot.on('callback_query', async (callbackQuery) => {
   const action = callbackQuery.data;
   const msg = callbackQuery.message;
   const chatId = msg.chat.id;
 
-  try {
-    if (action === 'main_menu') {
-      await bot.editMessageText(services.main.text, { chat_id: chatId, message_id: msg.message_id, parse_mode: 'Markdown', reply_markup: { inline_keyboard: services.main.buttons } });
-    } else if (action === 'service_branding') {
-      await bot.editMessageText(services.branding.text, { chat_id: chatId, message_id: msg.message_id, parse_mode: 'Markdown', reply_markup: { inline_keyboard: services.branding.buttons } });
-    } else if (action === 'service_social') {
-      await bot.editMessageText(services.social.text, { chat_id: chatId, message_id: msg.message_id, parse_mode: 'Markdown', reply_markup: { inline_keyboard: services.social.buttons } });
-    } else if (action === 'service_tech') {
-      await bot.editMessageText(services.tech.text, { chat_id: chatId, message_id: msg.message_id, parse_mode: 'Markdown', reply_markup: { inline_keyboard: services.tech.buttons } });
-    } else if (action === 'free_audit') {
-      await bot.editMessageText("👁️ فضلاً أرسل (الموقع، منصات السوشيال ميديا، ورقم الواتساب) وسأقوم بفحصها فوراً.", { chat_id: chatId, message_id: msg.message_id, reply_markup: { inline_keyboard: [[{ text: "⬅️ العودة", callback_data: 'main_menu' }]] } });
-    } else if (action === 'contact_human') {
-      const contactText = `👁️ للتواصل المباشر مع الإدارة التنفيذية لـ *EchoWave*: \n\n📱 *المهندس عمرو:* 01144408455 \n\n📍 [تحدث معنا عبر واتساب مباشرة](https://wa.me/201144408455)`;
-      bot.sendMessage(chatId, contactText, { parse_mode: 'Markdown', disable_web_page_preview: true });
-    }
-    bot.answerCallbackQuery(callbackQuery.id);
-  } catch (e) { console.error(e); }
+  const backBtn = [[{ text: "⬅️ العودة للرئيسية", callback_data: 'main_menu' }]];
+
+  if (action === 'main_menu') {
+    bot.editMessageText(services.main.text, { chat_id: chatId, message_id: msg.message_id, parse_mode: 'Markdown', reply_markup: { inline_keyboard: services.main.buttons } });
+  } else if (action === 'form_branding') {
+    bot.editMessageText(services.forms.branding, { chat_id: chatId, message_id: msg.message_id, parse_mode: 'Markdown', reply_markup: { inline_keyboard: backBtn } });
+  } else if (action === 'form_social') {
+    bot.editMessageText(services.forms.social, { chat_id: chatId, message_id: msg.message_id, parse_mode: 'Markdown', reply_markup: { inline_keyboard: backBtn } });
+  } else if (action === 'form_tech') {
+    bot.editMessageText(services.forms.tech, { chat_id: chatId, message_id: msg.message_id, parse_mode: 'Markdown', reply_markup: { inline_keyboard: backBtn } });
+  } else if (action === 'form_audit') {
+    bot.editMessageText(services.forms.audit, { chat_id: chatId, message_id: msg.message_id, parse_mode: 'Markdown', reply_markup: { inline_keyboard: backBtn } });
+  } else if (action === 'contact_human') {
+    const contactText = `👁️ للتواصل المباشر مع الإدارة التنفيذية لـ *EchoWave*:\n\n📱 *المهندس عمرو:* 01144408455\n\n📍 [تحدث معنا عبر واتساب مباشرة](https://wa.me/201144408455)`;
+    bot.sendMessage(chatId, contactText, { parse_mode: 'Markdown', disable_web_page_preview: true });
+  }
+  bot.answerCallbackQuery(callbackQuery.id);
 });
