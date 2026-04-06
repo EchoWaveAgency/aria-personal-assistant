@@ -2,9 +2,15 @@ require('dotenv').config();
 const TelegramBot = require('node-telegram-bot-api');
 const axios = require('axios');
 
-const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, { polling: true });
+const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, { 
+  polling: {
+    autoStart: true,
+    params: { timeout: 10 }
+  }
+});
+
 const OWNER_ID = process.env.CHAT_ID;
-const GEMINI_KEY = process.env.GEMINI_API_KEY;
+const GROQ_KEY = process.env.GROQ_API_KEY;
 
 const ARIA_PROMPT = `You are ARIA, Personal AI Assistant 
 of Amr Sayed, CEO of EchoWave Agency Ltd (UK & Egypt).
@@ -54,28 +60,48 @@ bot.on('message', async (msg) => {
     { parse_mode: 'Markdown' });
   }
 
+  if (userText === '/help') {
+    return bot.sendMessage(OWNER_ID,
+`👁 *ARIA — الأوامر المتاحة*
+━━━━━━━━━━━━━━━
+/start — تشغيل ARIA
+/digest — ملخص المهام
+/focus — وضع التركيز
+/help — هذه القائمة
+
+أو ابعت أي رسالة عادية وأنا هرد عليك.`,
+    { parse_mode: 'Markdown' });
+  }
+
   try {
     bot.sendMessage(OWNER_ID, '⏳ ARIA بتفكر...');
 
     const response = await axios.post(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,
+      'https://api.groq.com/openai/v1/chat/completions',
       {
-        system_instruction: {
-          parts: [{ text: ARIA_PROMPT }]
-        },
-        contents: [{
-          parts: [{ text: userText }]
-        }]
+        model: 'llama-3.3-70b-versatile',
+        messages: [
+          { role: 'system', content: ARIA_PROMPT },
+          { role: 'user', content: userText }
+        ],
+        max_tokens: 1000,
+        temperature: 0.7
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${GROQ_KEY}`,
+          'Content-Type': 'application/json'
+        }
       }
     );
 
-    const reply = response.data.candidates[0].content.parts[0].text;
+    const reply = response.data.choices[0].message.content;
     bot.sendMessage(OWNER_ID, `👁 *ARIA:*\n${reply}`,
       { parse_mode: 'Markdown' });
 
   } catch (err) {
-   bot.sendMessage(OWNER_ID,
-  `⚠️ خطأ: ${err.response?.data?.error?.message || err.message}`);
+    bot.sendMessage(OWNER_ID,
+      `⚠️ خطأ: ${err.response?.data?.error?.message || err.message}`);
   }
 });
 
