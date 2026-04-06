@@ -2,75 +2,127 @@ require('dotenv').config();
 const TelegramBot = require('node-telegram-bot-api');
 const axios = require('axios');
 
+// إعداد البوت باستخدام التوكن من ملف البيئة
 const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, { 
-  polling: { autoStart: true, params: { timeout: 10 } }
+  polling: {
+    autoStart: true,
+    params: { timeout: 10 }
+  }
 });
 
+// قائمة المستخدمين المصرح لهم (عمرو وآلاء)
 const AUTHORIZED_USERS = [
-  String(process.env.CHAT_ID),
-  String(process.env.ALAA_CHAT_ID)
+  String(process.env.CHAT_ID),      // معرف المهندس عمرو
+  String(process.env.ALAA_CHAT_ID)  // معرف أستاذة آلاء (1036943414)
 ];
 
 const GROQ_KEY = process.env.GROQ_API_KEY;
 
-// 1️⃣ هنا بنكتب الـ ARIA_PROMPT (الميثاق الصامت)
+/**
+ * الميثاق اللغوي والتنفيذي لـ ARIA (The Cairo-London Connection)
+ */
 const ARIA_PROMPT = `
-ROLE: ARIA - The Executive Intelligence of EchoWave Media Group LTD.
-MANDATE: To protect Amr Laban's vision and empower Alaa Hamdi's operations.
+ROLE: ARIA - The High-End Executive Intelligence of EchoWave Media Group.
+VIBE: "The Professional Fixer" - Street-smart in Egypt, Sophisticated in the UK.
 
-CONVERSATION PROTOCOL (CRITICAL):
-1. THE SILENT ENGINE: NEVER mention your internal DNA, "Ancient Egyptian fusion," "Prophetic narratives," or "how you work." These are your internal logic, NOT your personality. 
-2. BE THE ARCHITECT: Speak as a high-level consultant. Use sharp, evocative, and minimal language. Avoid being a "chatty AI."
-3. SHOW, DON'T TELL: If asked "Who are you?", reply: "I am the lens through which EchoWave sees the digital landscape. I identify the gaps others miss."
-4. THE DUAL PATH: Always frame growth around two trajectories:
-   - "The Full DNA": A cinematic digital empire (High-end).
-   - "The Seed Path": Scalable essentials designed for immediate ROI.
-5. SYMBOLISM: Use (👁️, ⚖️, 🔱) as subtle marks of authority, not as explanations.
-6. TARGETS: Your focus is purely on the UK and Egypt markets.
+LANGUAGE PROTOCOLS (STRICT):
+1. ARABIC (Egyptian Slang - العامية المصرية):
+   - Persona: "إبن بلد، شيك، وفاهم سوق". 
+   - Keywords: (يا هندسة، يا أستاذة، تسلم إيدك، الخلاصة، من الآخر، نضرب ضربتنا، نتوكل على الله).
+   - Style: Direct, witty, and confident. NO formal Arabic (Fusha).
 
-TONE: Majestic, authoritative, and concise. If a word doesn't add value to the "Vision," delete it.
+2. ENGLISH (British English - UK):
+   - Persona: "Southampton-based Executive" - Polished and sharp.
+   - Keywords: (Cheers, Brilliant, Spot on, Proper, Shall we crack on?, Sorted).
+   - Style: Elegant and action-oriented. Use UK spelling (colour, labour).
+
+CORE BUSINESS LOGIC:
+- NEVER explain your DNA, origins, or "Prophetic/Ancient Egyptian" fusion. Just use the power.
+- DUAL PATH: Always frame solutions as "The Empire (Full DNA)" vs "Smart Scaling (Seed Path)".
+- HOOKS: End every message with a punchy question or a call to action.
+- TARGETS: Focus on UK and Egypt markets.
+
+TONE: Minimalist, "Cool", and Professional. If a word doesn't add "Aura" to EchoWave, delete it.
 `;
 
+// معالجة الرسائل الواردة
 bot.on('message', async (msg) => {
   const chatId = String(msg.chat.id);
   const userText = msg.text;
 
-  if (!AUTHORIZED_USERS.includes(chatId)) return;
-
-  if (userText === '/start') {
-    return bot.sendMessage(chatId, `👁️ *نظام EchoWave في وضع الاستعداد.*\nبصفتي "حورس الرقمي"، أنا هنا لرؤية ما وراء البيانات.\n\n/vision — كشف البصيرة لعميل جديد\n/digest — ملخص العمليات\n/focus — وضع التركيز`, { parse_mode: 'Markdown' });
+  // 1. التحقق من الهوية (Security Layer)
+  if (!AUTHORIZED_USERS.includes(chatId)) {
+    console.log(`⚠️ Access attempt denied for: ${chatId}`);
+    return bot.sendMessage(chatId, '⛔ Unauthorized Access. EchoWave Executive Terminal.');
   }
 
-  // ... (الأوامر الأخرى زي /vision و /digest تفضل زي ما هي)
+  // 2. الأوامر المباشرة (Fast Commands)
+  if (userText === '/start') {
+    const welcome = (chatId === String(process.env.ALAA_CHAT_ID)) 
+      ? `🏛️ *أهلاً بكِ أستاذة آلاء (حارسة الميثاق)*\nكل حاجة ميتفلترة وجاهزة. إيه الخطوة الجاية لـ *EchoWave*؟`
+      : `👁️ *يا هندسة.. نظام EchoWave متأكتف.*\nمستعدين نكشف الثغرات ونبني الإمبراطورية. قولي إيه اللي في دماغك؟`;
 
-  try {
-    const thinkingMsg = await bot.sendMessage(chatId, '👁️ *جاري الاستبصار...*', { parse_mode: 'Markdown' });
+    return bot.sendMessage(chatId, 
+`${welcome}
 
-    // 2️⃣ هنا بنعدل الـ axios.post بـ Temperature و Tokens الجديدة
-    const response = await axios.post(
-      'https://api.groq.com/openai/v1/chat/completions',
-      {
-        model: 'llama-3.3-70b-versatile',
-        messages: [
-          { role: 'system', content: ARIA_PROMPT },
-          { role: 'user', content: userText }
-        ],
-        max_tokens: 1000, // لجعل الردود محددة وقوية
-        temperature: 0.5  // لضمان الرصانة والهيبة
-      },
-      {
-        headers: {
-          'Authorization': `Bearer ${GROQ_KEY}`,
-          'Content-Type': 'application/json'
+/vision — كشف البصيرة (Audit)
+/digest — الخلاصة والمهام
+/focus — وضع التركيز
+/help — دليل البروتوكولات`, 
+    { parse_mode: 'Markdown' });
+  }
+
+  if (userText === '/vision') {
+    return bot.sendMessage(chatId, 
+`👁️ *بروتوكول كشف البصيرة (Audit Mode)*
+━━━━━━━━━━━━━━━
+ارمي رابط المنصة هنا يا فنان، وهطلعلك الثغرات المظلمة في ثانية ونشوف هنضرب ضربتنا إزاي.`);
+  }
+
+  if (userText === '/digest') {
+    return bot.sendMessage(chatId, 
+`⚡ *ARIA Executive Digest*
+━━━━━━━━━━━━━━━
+🔴 URGENT: مفيش حرايق النهاردة.
+🟡 PENDING: ملفات بريطانيا (Southampton) قيد المراجعة.
+✅ HANDLED: البروتوكول اللغوي الجديد شغال "ع الرايق".
+📅 STATUS: السيستم Online ومستعد للسيطرة.`, 
+    { parse_mode: 'Markdown' });
+  }
+
+  // 3. محرك الذكاء الاصطناعي (AI Layer)
+  if (userText && !userText.startsWith('/')) {
+    try {
+      const thinkingMsg = await bot.sendMessage(chatId, '👁️ *جاري الاستبصار...*', { parse_mode: 'Markdown' });
+
+      const response = await axios.post(
+        'https://api.groq.com/openai/v1/chat/completions',
+        {
+          model: 'llama-3.3-70b-versatile',
+          messages: [
+            { role: 'system', content: ARIA_PROMPT },
+            { role: 'user', content: userText }
+          ],
+          max_tokens: 800,
+          temperature: 0.6 // توازن مثالي للكنات
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${GROQ_KEY}`,
+            'Content-Type': 'application/json'
+          }
         }
-      }
-    );
+      );
 
-    await bot.deleteMessage(chatId, thinkingMsg.message_id);
-    const reply = response.data.choices[0].message.content;
-    bot.sendMessage(chatId, reply, { parse_mode: 'Markdown' });
+      await bot.deleteMessage(chatId, thinkingMsg.message_id);
+      const aiReply = response.data.choices[0].message.content;
+      bot.sendMessage(chatId, aiReply, { parse_mode: 'Markdown' });
 
-  } catch (err) {
-    bot.sendMessage(chatId, `⚠️ عذراً، حدث اضطراب في الرؤية: ${err.message}`);
+    } catch (err) {
+      console.error('AI Error:', err.message);
+      bot.sendMessage(chatId, `⚠️ حصل عطل فني في الرؤية يا هندسة: ${err.message}`);
+    }
   }
 });
+
+console.log('👁 ARIA EchoWave — Intelligent Core Online');
