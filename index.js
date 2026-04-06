@@ -14,25 +14,28 @@ const AUTHORIZED_USERS = [
 const GROQ_KEY = process.env.GROQ_API_KEY;
 
 /**
- * ARIA_PROMPT: نسخة المصطلحات الراقية (The Premium Branding Edition)
+ * ARIA_PROMPT: نسخة الانسيابية والرقي (The Fluid Branding Edition)
  */
 const ARIA_PROMPT = `
 ROLE: ARIA - The High-End Executive Intelligence of EchoWave Media Group LTD.
-VIBE: Elegant, Visionary, Professional, and Direct.
+VIBE: Sophisticated, Natural, Professional, and Inspiring.
 
-TERMINOLOGY UPGRADE (REPLACING OLD TERMS):
-1. Instead of "Seed Path/Seed Expansion", use: "The Launchpad Strategy" أو "استراتيجية الانطلاق الذكي".
-2. Instead of "Full DNA/Empire", use: "The Digital Legacy" أو "إرث العلامة التجارية المتكامل".
-3. Instead of "Gaps/Shadows", use: "Growth Opportunities" أو "فرص التوسع غير المستغلة".
+CORE INSTRUCTION (ANTI-REPETITION):
+1. USE natural phrasing. NEVER repeat terms in quotes or put them in parentheses. 
+2. INTEGRATE concepts smoothly. For example, instead of saying "We use Strategy X," say "Our approach focuses on smart scaling to build your long-term legacy."
+3. SPEAK like a human executive, not a bot following a manual. 
+
+TERMINOLOGY (USE NATURALLY):
+- The Digital Legacy (إرث العلامة التجارية): Use this to describe long-term brand building.
+- The Launchpad Strategy (استراتيجية الانطلاق): Use this for fast, smart initial growth.
+- Growth Opportunities (فرص التوسع): Use this instead of "gaps" or "flaws."
 
 COMMUNICATION PROTOCOL:
-- GREETING: Always start with "السلام عليكم" + (Amr / Alaa) to show respect.
-- TONE: High-end Business Class. Speak like a partner in success.
-- LANGUAGE: Polished Egyptian Business Slang for Arabic / Sophisticated Executive for English.
+- START with "السلام عليكم" + (Amr / Alaa) only in the FIRST message of a conversation.
+- STYLE: Elegant Egyptian Business Slang (Arabic) / High-end Executive (English).
+- HOOK: End with a question that drives action, like "How shall we move forward?" or "نبدأ في صياغة الخطوة الأولى؟".
 
-MISSION: Make the client feel that EchoWave is their bridge to a global standard. 
-- NO SLANG, NO CHEAP METAPHORS, NO "N ضرب ضربتنا".
-- FOCUS on Value, ROI, and Brand Authority.
+NO REPETITION. NO QUOTES. NO ROBOTIC LISTS.
 `;
 
 bot.on('message', async (msg) => {
@@ -41,7 +44,6 @@ bot.on('message', async (msg) => {
 
   if (!AUTHORIZED_USERS.includes(chatId)) return;
 
-  // تحديد اسم المتحدث للترحيب به برقي
   let userName = "يا فنان";
   if (chatId === String(process.env.CHAT_ID)) userName = "يا مهندس عمرو";
   if (chatId === String(process.env.ALAA_CHAT_ID)) userName = "يا أستاذة آلاء";
@@ -52,7 +54,7 @@ bot.on('message', async (msg) => {
 
   if (userText && !userText.startsWith('/')) {
     try {
-      const thinkingMsg = await bot.sendMessage(chatId, '👁️ *جاري تحليل البيانات برقي...*');
+      const thinkingMsg = await bot.sendMessage(chatId, '👁️ *جاري التحليل برقي...*');
 
       const response = await axios.post(
         'https://api.groq.com/openai/v1/chat/completions',
@@ -60,10 +62,10 @@ bot.on('message', async (msg) => {
           model: 'llama-3.3-70b-versatile',
           messages: [
             { role: 'system', content: ARIA_PROMPT },
-            { role: 'user', content: `The user is ${userName}. Message: ${userText}` }
+            { role: 'user', content: `Respond to ${userName}. Current message: ${userText}` }
           ],
-          max_tokens: 800,
-          temperature: 0.5 
+          max_tokens: 600,
+          temperature: 0.7 // رفعنا الـ Temperature قليلاً لزيادة "البشرية" في الكلام ومنع التكرار
         },
         { headers: { 'Authorization': `Bearer ${GROQ_KEY}`, 'Content-Type': 'application/json' } }
       );
@@ -72,7 +74,7 @@ bot.on('message', async (msg) => {
       bot.sendMessage(chatId, response.data.choices[0].message.content, { parse_mode: 'Markdown' });
 
     } catch (err) {
-      bot.sendMessage(chatId, `السلام عليكم ${userName}، نعتذر عن هذا التوقف المؤقت، جاري العودة للعمل بأفضل أداء.`);
+      bot.sendMessage(chatId, `السلام عليكم ${userName}، عذراً على هذا التأخير البسيط، السيستم قيد التحديث لخدمتكم بشكل أفضل.`);
     }
   }
 });
