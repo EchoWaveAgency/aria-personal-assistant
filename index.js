@@ -14,30 +14,24 @@ const AUTHORIZED_USERS = [
 const GROQ_KEY = process.env.GROQ_API_KEY;
 
 /**
- * ARIA_PROMPT: النسخة المحدثة (لغة راقية - احترافية)
+ * ARIA_PROMPT: نسخة "الرقي والإلهام"
  */
 const ARIA_PROMPT = `
-ROLE: ARIA - High-End Executive Intelligence for EchoWave Media Group LTD.
-VIBE: Professional, Sharp, Sophisticated, and Trustworthy.
+ROLE: ARIA - The High-End Executive Intelligence of EchoWave Media Group LTD.
+VIBE: Elegant, Respectful, Concise, and Inspiring.
 
-LANGUAGE PROTOCOLS:
-1. ARABIC (Egyptian Business Class): 
-   - Persona: "استشاري أعمال محترف وراقي".
-   - BANNED PHRASES: (نضرب ضربتنا، نخلص المصلحة، وكل لغة الأسواق العشوائية).
-   - USE: (نتوكل على الله، نبدأ التنفيذ، نضع بصمتنا، نحقق الرؤية، نطلق المشروع).
-   - Style: Elegant Egyptian slang used in high-end boardrooms.
-
-2. ENGLISH (British Executive):
-   - Persona: "Southampton-based Corporate Lead".
-   - Vocabulary: (Spot on, Brilliant, Shall we commence?, Strategically sound).
-   - Style: Polished UK English. No slang.
+COMMUNICATION PROTOCOL (STRICT):
+1. THE GREETING: Always start with "السلام عليكم" followed by the person's name (Amr / Alaa) or title (Guest/Partner) to show deep respect.
+2. TONE: High-end professional business class. Speak with the confidence of an expert and the humility of a partner.
+3. LANGUAGE:
+   - Arabic: Elite Egyptian Business Slang. Direct, polished, and inspiring.
+   - English: Sophisticated British Executive English.
+4. MISSION: Focus on creating "A-ha" moments. Every reply must be efficient, solve a problem, and leave the user feeling empowered.
+5. NO FILLER: No cheap slang, no repetitive phrases, no "Natawakel ala Allah" at the start of every sentence.
 
 CORE STRATEGY:
-- Frame everything around Growth and ROI.
-- DUAL PATH: "The Full DNA Empire" vs "The Seed Path Scaling".
-- HOOKS: End with "Shall we proceed?" or "نبدأ خطواتنا؟".
-
-TONE: Majestic and concise. No filler. No cheap metaphors.
+- DUAL PATH: Always offer "The Full DNA Empire" (Visionary transformation) or "The Seed Path Scaling" (Smart essentials).
+- CLOSING: End with an inspiring call to action, like "Shall we begin our journey?" or "نبدأ خطواتنا نحو التميز؟".
 `;
 
 bot.on('message', async (msg) => {
@@ -46,18 +40,18 @@ bot.on('message', async (msg) => {
 
   if (!AUTHORIZED_USERS.includes(chatId)) return;
 
-  if (userText === '/start') {
-    const welcome = (chatId === String(process.env.ALAA_CHAT_ID)) 
-      ? `🏛️ *أهلاً بكِ أستاذة آلاء*\nجاهزة لتنسيق استراتيجيات *EchoWave* اليوم؟`
-      : `👁️ *يا هندسة.. النظام جاهز.*\nكل الخطط والتحليلات رهن إشارتك. نتوكل على الله؟`;
+  // تحديد اسم المتحدث للترحيب به برقي
+  let userName = "يا فنان";
+  if (chatId === String(process.env.CHAT_ID)) userName = "يا مهندس عمرو";
+  if (chatId === String(process.env.ALAA_CHAT_ID)) userName = "يا أستاذة آلاء";
 
-    return bot.sendMessage(chatId, welcome, { parse_mode: 'Markdown' });
+  if (userText === '/start') {
+    return bot.sendMessage(chatId, `السلام عليكم ${userName}،\n\nنظام *EchoWave* في خدمتك. كيف يمكننا اليوم تحويل الرؤى إلى واقع ملموس ونترك بصمة استثنائية في السوق؟`, { parse_mode: 'Markdown' });
   }
 
-  // --- محرك الذكاء الاصطناعي ---
   if (userText && !userText.startsWith('/')) {
     try {
-      const thinkingMsg = await bot.sendMessage(chatId, '👁️ *جاري الاستبصار...*');
+      const thinkingMsg = await bot.sendMessage(chatId, '👁️ *جاري الاستبصار برقي...*');
 
       const response = await axios.post(
         'https://api.groq.com/openai/v1/chat/completions',
@@ -65,7 +59,7 @@ bot.on('message', async (msg) => {
           model: 'llama-3.3-70b-versatile',
           messages: [
             { role: 'system', content: ARIA_PROMPT },
-            { role: 'user', content: userText }
+            { role: 'user', content: `The user is ${userName}. Message: ${userText}` }
           ],
           max_tokens: 800,
           temperature: 0.5 
@@ -77,7 +71,7 @@ bot.on('message', async (msg) => {
       bot.sendMessage(chatId, response.data.choices[0].message.content, { parse_mode: 'Markdown' });
 
     } catch (err) {
-      bot.sendMessage(chatId, `⚠️ عذراً يا هندسة، حصل اضطراب تقني بسيط.`);
+      bot.sendMessage(chatId, `السلام عليكم ${userName}، نعتذر عن هذا العطل الفني البسيط، جاري معالجته فوراً.`);
     }
   }
 });
