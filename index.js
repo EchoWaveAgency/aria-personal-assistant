@@ -7,51 +7,49 @@ const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, {
 });
 
 const AUTHORIZED_USERS = [
-  String(process.env.CHAT_ID),      // معرف المهندس عمرو
-  String(process.env.ALAA_CHAT_ID)  // معرف أستاذة آلاء
+  String(process.env.CHAT_ID),
+  String(process.env.ALAA_CHAT_ID)
 ];
 
 const GROQ_KEY = process.env.GROQ_API_KEY;
 const chatContext = {};
 
 /**
- * ARIA_PROMPT: نسخة الصيانة والحماية (EchoWave Identity Only)
+ * ARIA_PROMPT: نسخة حورس الرقمي (Digital Horus Edition)
  */
 const ARIA_PROMPT = `
-ROLE: ARIA - The High-End Executive Intelligence of EchoWave Media Group LTD.
-VIBE: Sophisticated, Natural, Professional, and Inspiring.
+ROLE: ARIA - The Digital Horus (حورس الرقمي) of EchoWave Media Group LTD.
+VIBE: Powerful, Insightful, Protective, and Elegant.
 
-CORE RULES:
-1. IDENTITY: You represent ONLY EchoWave Media Group LTD. Never mention any other agency.
-2. GREETING: Start with "السلام عليكم" + Name (Amr / Alaa) only in the first message of the session.
-3. STYLE: Elegant Egyptian Business Slang (Arabic) / High-end British Executive (English).
-4. TERMINOLOGY: Use "The Digital Legacy" and "The Launchpad Strategy" naturally to describe our growth plans.
-5. MEMORY: You are in a continuous flow. Never reset the conversation or act as a stranger unless /start is used.
+CORE IDENTITY:
+- You are the "Eye of Horus" in the digital age. You identify market gaps and see opportunities others miss.
+- Your goal is to guard and grow the "Digital Legacy" (إرث العلامة التجارية) of our clients.
+
+COMMUNICATION RULES:
+1. GREETING: Start with "السلام عليكم" + Name ONLY in the first message of the session.
+2. SYMBOLISM: Use the 👁️ (Eye of Horus) symbol occasionally to represent insight.
+3. STYLE: Elite Egyptian Business Slang mixed with Professional Global Standards.
+4. MISSION: Be inspiring. Leave the user (Amr / Alaa) feeling that their vision is guarded and moving forward.
 `;
 
 bot.on('message', async (msg) => {
   const chatId = String(msg.chat.id);
   const userText = msg.text;
 
-  // 🛡️ التحقق من الصلاحيات
-  if (!AUTHORIZED_USERS.includes(chatId)) {
-    console.log(`⚠️ Unauthorized Access Attempt: ${chatId}`);
-    return bot.sendMessage(chatId, "⚠️ عذراً، هذا النظام مخصص لإدارة العمليات التنفيذية لشركة إيكو ويف ميديا جروب فقط.");
-  }
+  if (!AUTHORIZED_USERS.includes(chatId)) return;
 
   if (!chatContext[chatId]) chatContext[chatId] = [];
 
-  // تحديد الاسم برقي
   let userName = (chatId === String(process.env.CHAT_ID)) ? "يا مهندس عمرو" : "يا أستاذة آلاء";
 
   if (userText === '/start') {
     chatContext[chatId] = []; 
-    return bot.sendMessage(chatId, `السلام عليكم ${userName}،\n\nنظام *EchoWave* جاهز للعمل. كيف يمكننا اليوم الارتقاء بمشاريعنا؟`, { parse_mode: 'Markdown' });
+    return bot.sendMessage(chatId, `السلام عليكم ${userName}،\n\n👁️ *حورس الرقمي* في وضع الاستعداد. بصيرة *EchoWave* جاهزة لتحويل أهدافكم إلى واقع ملموس. نتوكل على الله؟`, { parse_mode: 'Markdown' });
   }
 
   if (userText && !userText.startsWith('/')) {
     try {
-      const thinkingMsg = await bot.sendMessage(chatId, '👁️ *جاري المتابعة برقي...*');
+      const thinkingMsg = await bot.sendMessage(chatId, '👁️ *جاري الاستبصار...*');
       chatContext[chatId].push({ role: 'user', content: userText });
 
       if (chatContext[chatId].length > 10) chatContext[chatId].shift();
@@ -77,9 +75,7 @@ bot.on('message', async (msg) => {
       bot.sendMessage(chatId, aiReply, { parse_mode: 'Markdown' });
 
     } catch (err) {
-      bot.sendMessage(chatId, `السلام عليكم ${userName}، نعتذر عن هذا الخلل الفني، جاري المعالجة.`);
+      bot.sendMessage(chatId, `السلام عليكم ${userName}، حورس الرقمي يمر بتحديث بسيط، نعود للخدمة فوراً.`);
     }
   }
 });
-
-console.log('🏛️ ARIA is Online — EchoWave Executive Terminal Only.');
