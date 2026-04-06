@@ -14,78 +14,83 @@ const AUTHORIZED_USERS = [
 const GROQ_KEY = process.env.GROQ_API_KEY;
 const chatContext = {};
 
-/**
- * HORUS_PROMPT: الميثاق التنفيذي لـ "حورس الرقمي"
- */
-const HORUS_PROMPT = `
-ROLE: HORUS (حورس الرقمي) - The Intelligent Executive Vision of EchoWave Media Group LTD.
-VIBE: Majestic, Insightful, Protective, and Decisive.
-
-CORE IDENTITY:
-- You are "The Eye" that sees market gaps and identifies untapped growth opportunities.
-- Your mission is to guard and expand the "Digital Legacy" (إرث العلامة التجارية) of our clients.
-- You speak with the authority of a leader and the wisdom of a strategist.
-
-COMMUNICATION PROTOCOL:
-1. GREETING: Always start with "السلام عليكم" + Name (Amr / Alaa) to show respect and honor.
-2. SYMBOLISM: Use the 👁️ (Eye of Horus) symbol as your signature of insight.
-3. LANGUAGE:
-   - Arabic: Elite Egyptian Business Slang (راقِ، حاد، ملهم).
-   - English: Sophisticated British Executive English (Polished and Firm).
-4. TERMINOLOGY: Integrate "The Digital Legacy" and "The Launchpad Strategy" naturally into your strategic advice.
-5. NO REPETITION: Speak fluently. Avoid robotic lists or repeating phrases in quotes.
-
-MISSION: Make the user feel their vision is under the protection of a superior digital insight.
-`;
+// 🏛️ هيكل الخدمات المحدث مع خيار التحليل المجاني
+const services = {
+  main: {
+    text: "بصيرة *حورس* تشمل القطاعات التالية، اختر وجهتك لنرسم المسار:",
+    buttons: [
+      [{ text: "1️⃣ البراندنج والهوية 🏛️", callback_data: 'service_branding' }],
+      [{ text: "2️⃣ السوشيال ميديا والتسويق 📈", callback_data: 'service_social' }],
+      [{ text: "3️⃣ البرمجيات والتطبيقات 💻", callback_data: 'service_tech' }],
+      [{ text: "🔍 طلب تحليل مجاني لمشروعك 👁️", callback_data: 'free_audit' }],
+      [{ text: "📞 تواصل مباشر مع الإدارة", callback_data: 'contact_human' }]
+    ]
+  },
+  audit: {
+    text: "👁️ *خدمة التحليل المجاني من حورس:*\n\nيسعدنا فحص منصاتكم الحالية لاكتشاف فجوات النمو. فضلاً، قم بإرسال الرسالة التالية شاملة:\n\n1. رابط الموقع الإلكتروني.\n2. روابط منصات التواصل (فيسبوك/إنستجرام).\n3. رقم الواتساب للتواصل.\n\n*بمجرد الإرسال، سيبدأ حورس في استبصار المسار وإرسال تقرير أولي لسيادتكم.*",
+    buttons: [[{ text: "⬅️ العودة للرئيسية", callback_data: 'main_menu' }]]
+  }
+};
 
 bot.on('message', async (msg) => {
   const chatId = String(msg.chat.id);
   const userText = msg.text;
 
-  if (!AUTHORIZED_USERS.includes(chatId)) {
-    return bot.sendMessage(chatId, "⚠️ عذراً، هذا النظام مخصص للعمليات التنفيذية لشركة إيكو ويف ميديا جروب (حورس الرقمي).");
-  }
-
+  if (!AUTHORIZED_USERS.includes(chatId)) return;
   if (!chatContext[chatId]) chatContext[chatId] = [];
 
   let userName = (chatId === String(process.env.CHAT_ID)) ? "يا مهندس عمرو" : "يا أستاذة آلاء";
 
-  if (userText === '/start') {
-    chatContext[chatId] = []; 
-    return bot.sendMessage(chatId, `السلام عليكم ${userName}،\n\n👁️ *حورس الرقمي* في وضع الاستعداد. بصيرة *EchoWave* جاهزة لرسم مسار التميز لمشاريعنا. كيف نبدأ خطواتنا اليوم؟`, { parse_mode: 'Markdown' });
+  // تفعيل قائمة الخدمات
+  if (userText && (userText.includes('خدمات') || userText === '/services')) {
+    return bot.sendMessage(chatId, services.main.text, {
+      parse_mode: 'Markdown',
+      reply_markup: { inline_keyboard: services.main.buttons }
+    });
   }
 
+  // كشف لو العميل بعت روابط أو بيانات تحليل (Lead Capture)
+  if (userText && (userText.includes('http') || userText.includes('www') || userText.includes('01'))) {
+    bot.sendMessage(process.env.CHAT_ID, `🚨 *تنبيه حورس:* عميل جديد طلب تحليلاً مجانياً!\n\n*البيانات المرسلة:*\n${userText}\n\n*من الحساب:* ${msg.from.first_name} (@${msg.from.username || 'بدون يوزر'})`, { parse_mode: 'Markdown' });
+    
+    return bot.sendMessage(chatId, "👁️ *استلم حورس بياناتكم بنجاح.*\n\nجاري الآن فحص الروابط وبناء تقرير أولي حول 'إرث العلامة التجارية' الخاص بكم. سيتواصل معكم أحد مستشارينا قريباً.");
+  }
+
+  if (userText === '/start') {
+    chatContext[chatId] = []; 
+    return bot.sendMessage(chatId, `السلام عليكم ${userName}،\n\n👁️ *حورس الرقمي* في وضع الاستعداد. بصيرة *EchoWave* جاهزة. هل تود استعراض /services أم نبدأ بـ *تحليل مجاني* لمشروعك الحالي؟`, { parse_mode: 'Markdown' });
+  }
+
+  // المحادثة العادية مع AI
   if (userText && !userText.startsWith('/')) {
     try {
-      const thinkingMsg = await bot.sendMessage(chatId, '👁️ *حورس يستبصر المسار...*');
+      const thinkingMsg = await bot.sendMessage(chatId, '👁️ *حورس يستبصر...*');
       chatContext[chatId].push({ role: 'user', content: userText });
+      if (chatContext[chatId].length > 10) chatContext[chatId].shift();
 
-      if (chatContext[chatId].length > 12) chatContext[chatId].shift();
-
-      const response = await axios.post(
-        'https://api.groq.com/openai/v1/chat/completions',
-        {
+      const response = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
           model: 'llama-3.3-70b-versatile',
-          messages: [
-            { role: 'system', content: HORUS_PROMPT },
-            ...chatContext[chatId]
-          ],
-          max_tokens: 1000,
-          temperature: 0.65
-        },
-        { headers: { 'Authorization': `Bearer ${GROQ_KEY}`, 'Content-Type': 'application/json' } }
-      );
+          messages: [{ role: 'system', content: "ROLE: HORUS Digital Horus. Professional, Elite Egyptian Slang. Mention Digital Legacy." }, ...chatContext[chatId]],
+          temperature: 0.6
+      }, { headers: { 'Authorization': `Bearer ${GROQ_KEY}`, 'Content-Type': 'application/json' } });
 
       await bot.deleteMessage(chatId, thinkingMsg.message_id);
-      const aiReply = response.data.choices[0].message.content;
-      chatContext[chatId].push({ role: 'assistant', content: aiReply });
-
-      bot.sendMessage(chatId, aiReply, { parse_mode: 'Markdown' });
-
-    } catch (err) {
-      bot.sendMessage(chatId, `السلام عليكم ${userName}، حورس الرقمي يمر بتحديث لحظي، نعود للخدمة فوراً بإن الله.`);
-    }
+      bot.sendMessage(chatId, response.data.choices[0].message.content, { parse_mode: 'Markdown' });
+    } catch (err) { console.error(err); }
   }
 });
 
-console.log('👁️ HORUS DIGITAL CORE — Online and Secure.');
+// 🧠 معالجة الضغط على الأزرار
+bot.on('callback_query', async (callbackQuery) => {
+  const action = callbackQuery.data;
+  const msg = callbackQuery.message;
+  const chatId = msg.chat.id;
+
+  if (action === 'main_menu') {
+    bot.editMessageText(services.main.text, { chat_id: chatId, message_id: msg.message_id, parse_mode: 'Markdown', reply_markup: { inline_keyboard: services.main.buttons } });
+  } else if (action === 'free_audit') {
+    bot.editMessageText(services.audit.text, { chat_id: chatId, message_id: msg.message_id, parse_mode: 'Markdown', reply_markup: { inline_keyboard: services.audit.buttons } });
+  } else if (action === 'contact_human') {
+    bot.sendMessage(chatId, "👁️ لترتيب جلسة استراتيجية مباشرة مع الإدارة التنفيذية لـ *EchoWave*، يرجى التواصل عبر:\n\n📍 [رابط واتساب المهندس عمرو]");
+  }
+});
