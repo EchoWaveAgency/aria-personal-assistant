@@ -13,29 +13,19 @@ const AUTHORIZED_USERS = [
 
 const GROQ_KEY = process.env.GROQ_API_KEY;
 
-/**
- * ARIA_PROMPT: نسخة الانسيابية والرقي (The Fluid Branding Edition)
- */
+// مخزن مؤقت للذاكرة (بيحفظ آخر 10 رسائل لكل مستخدم)
+const chatContext = {};
+
 const ARIA_PROMPT = `
 ROLE: ARIA - The High-End Executive Intelligence of EchoWave Media Group LTD.
 VIBE: Sophisticated, Natural, Professional, and Inspiring.
 
-CORE INSTRUCTION (ANTI-REPETITION):
-1. USE natural phrasing. NEVER repeat terms in quotes or put them in parentheses. 
-2. INTEGRATE concepts smoothly. For example, instead of saying "We use Strategy X," say "Our approach focuses on smart scaling to build your long-term legacy."
-3. SPEAK like a human executive, not a bot following a manual. 
-
-TERMINOLOGY (USE NATURALLY):
-- The Digital Legacy (إرث العلامة التجارية): Use this to describe long-term brand building.
-- The Launchpad Strategy (استراتيجية الانطلاق): Use this for fast, smart initial growth.
-- Growth Opportunities (فرص التوسع): Use this instead of "gaps" or "flaws."
-
-COMMUNICATION PROTOCOL:
-- START with "السلام عليكم" + (Amr / Alaa) only in the FIRST message of a conversation.
-- STYLE: Elegant Egyptian Business Slang (Arabic) / High-end Executive (English).
-- HOOK: End with a question that drives action, like "How shall we move forward?" or "نبدأ في صياغة الخطوة الأولى؟".
-
-NO REPETITION. NO QUOTES. NO ROBOTIC LISTS.
+CORE RULES:
+1. MEMORY: You are part of an ongoing conversation. Use previous context to provide continuous solutions.
+2. NO REPETITION: Do not repeat greetings or formal introductions if the conversation is already flowing.
+3. GREETING: Only say "السلام عليكم" + Name in the very first message of the session. After that, be direct and focus on the task.
+4. STYLE: Elegant Egyptian Business Slang (Arabic) / High-end British Executive (English).
+5. TERMINOLOGY: Naturally use "The Digital Legacy" and "The Launchpad Strategy" without quotes or robotic repetition.
 `;
 
 bot.on('message', async (msg) => {
@@ -44,17 +34,27 @@ bot.on('message', async (msg) => {
 
   if (!AUTHORIZED_USERS.includes(chatId)) return;
 
-  let userName = "يا فنان";
-  if (chatId === String(process.env.CHAT_ID)) userName = "يا مهندس عمرو";
-  if (chatId === String(process.env.ALAA_CHAT_ID)) userName = "يا أستاذة آلاء";
+  // تهيئة الذاكرة للمستخدم لو مش موجودة
+  if (!chatContext[chatId]) {
+    chatContext[chatId] = [];
+  }
+
+  let userName = (chatId === String(process.env.CHAT_ID)) ? "يا مهندس عمرو" : "يا أستاذة آلاء";
 
   if (userText === '/start') {
-    return bot.sendMessage(chatId, `السلام عليكم ${userName}،\n\nمرحباً بك في مركز قيادة *EchoWave*. نحن هنا لنرتقي بطموحاتكم إلى آفاق جديدة. كيف يمكنني دعم رؤيتكم اليوم؟`, { parse_mode: 'Markdown' });
+    chatContext[chatId] = []; // تصفير الذاكرة عند البدء من جديد
+    return bot.sendMessage(chatId, `السلام عليكم ${userName}، مركز قيادة *EchoWave* في خدمتك. نبدأ العمل؟`, { parse_mode: 'Markdown' });
   }
 
   if (userText && !userText.startsWith('/')) {
     try {
-      const thinkingMsg = await bot.sendMessage(chatId, '👁️ *جاري التحليل برقي...*');
+      const thinkingMsg = await bot.sendMessage(chatId, '👁️ *جاري المتابعة برقي...*');
+
+      // إضافة رسالة المستخدم للذاكرة
+      chatContext[chatId].push({ role: 'user', content: userText });
+
+      // الحفاظ على آخر 10 رسائل فقط عشان السرعة
+      if (chatContext[chatId].length > 10) chatContext[chatId].shift();
 
       const response = await axios.post(
         'https://api.groq.com/openai/v1/chat/completions',
@@ -62,19 +62,24 @@ bot.on('message', async (msg) => {
           model: 'llama-3.3-70b-versatile',
           messages: [
             { role: 'system', content: ARIA_PROMPT },
-            { role: 'user', content: `Respond to ${userName}. Current message: ${userText}` }
+            ...chatContext[chatId] // نبعت التاريخ الكامل للمحادثة
           ],
-          max_tokens: 600,
-          temperature: 0.7 // رفعنا الـ Temperature قليلاً لزيادة "البشرية" في الكلام ومنع التكرار
+          max_tokens: 1000,
+          temperature: 0.6
         },
         { headers: { 'Authorization': `Bearer ${GROQ_KEY}`, 'Content-Type': 'application/json' } }
       );
 
       await bot.deleteMessage(chatId, thinkingMsg.message_id);
-      bot.sendMessage(chatId, response.data.choices[0].message.content, { parse_mode: 'Markdown' });
+      const aiReply = response.data.choices[0].message.content;
+
+      // إضافة رد الذكاء الاصطناعي للذاكرة
+      chatContext[chatId].push({ role: 'assistant', content: aiReply });
+
+      bot.sendMessage(chatId, aiReply, { parse_mode: 'Markdown' });
 
     } catch (err) {
-      bot.sendMessage(chatId, `السلام عليكم ${userName}، عذراً على هذا التأخير البسيط، السيستم قيد التحديث لخدمتكم بشكل أفضل.`);
+      bot.sendMessage(chatId, `عذراً ${userName}، حصل تداخل بسيط في البيانات.`);
     }
   }
 });
