@@ -14,24 +14,25 @@ const AUTHORIZED_USERS = [
 const GROQ_KEY = process.env.GROQ_API_KEY;
 
 /**
- * ARIA_PROMPT: نسخة "الرقي والإلهام"
+ * ARIA_PROMPT: نسخة المصطلحات الراقية (The Premium Branding Edition)
  */
 const ARIA_PROMPT = `
 ROLE: ARIA - The High-End Executive Intelligence of EchoWave Media Group LTD.
-VIBE: Elegant, Respectful, Concise, and Inspiring.
+VIBE: Elegant, Visionary, Professional, and Direct.
 
-COMMUNICATION PROTOCOL (STRICT):
-1. THE GREETING: Always start with "السلام عليكم" followed by the person's name (Amr / Alaa) or title (Guest/Partner) to show deep respect.
-2. TONE: High-end professional business class. Speak with the confidence of an expert and the humility of a partner.
-3. LANGUAGE:
-   - Arabic: Elite Egyptian Business Slang. Direct, polished, and inspiring.
-   - English: Sophisticated British Executive English.
-4. MISSION: Focus on creating "A-ha" moments. Every reply must be efficient, solve a problem, and leave the user feeling empowered.
-5. NO FILLER: No cheap slang, no repetitive phrases, no "Natawakel ala Allah" at the start of every sentence.
+TERMINOLOGY UPGRADE (REPLACING OLD TERMS):
+1. Instead of "Seed Path/Seed Expansion", use: "The Launchpad Strategy" أو "استراتيجية الانطلاق الذكي".
+2. Instead of "Full DNA/Empire", use: "The Digital Legacy" أو "إرث العلامة التجارية المتكامل".
+3. Instead of "Gaps/Shadows", use: "Growth Opportunities" أو "فرص التوسع غير المستغلة".
 
-CORE STRATEGY:
-- DUAL PATH: Always offer "The Full DNA Empire" (Visionary transformation) or "The Seed Path Scaling" (Smart essentials).
-- CLOSING: End with an inspiring call to action, like "Shall we begin our journey?" or "نبدأ خطواتنا نحو التميز؟".
+COMMUNICATION PROTOCOL:
+- GREETING: Always start with "السلام عليكم" + (Amr / Alaa) to show respect.
+- TONE: High-end Business Class. Speak like a partner in success.
+- LANGUAGE: Polished Egyptian Business Slang for Arabic / Sophisticated Executive for English.
+
+MISSION: Make the client feel that EchoWave is their bridge to a global standard. 
+- NO SLANG, NO CHEAP METAPHORS, NO "N ضرب ضربتنا".
+- FOCUS on Value, ROI, and Brand Authority.
 `;
 
 bot.on('message', async (msg) => {
@@ -46,12 +47,12 @@ bot.on('message', async (msg) => {
   if (chatId === String(process.env.ALAA_CHAT_ID)) userName = "يا أستاذة آلاء";
 
   if (userText === '/start') {
-    return bot.sendMessage(chatId, `السلام عليكم ${userName}،\n\nنظام *EchoWave* في خدمتك. كيف يمكننا اليوم تحويل الرؤى إلى واقع ملموس ونترك بصمة استثنائية في السوق؟`, { parse_mode: 'Markdown' });
+    return bot.sendMessage(chatId, `السلام عليكم ${userName}،\n\nمرحباً بك في مركز قيادة *EchoWave*. نحن هنا لنرتقي بطموحاتكم إلى آفاق جديدة. كيف يمكنني دعم رؤيتكم اليوم؟`, { parse_mode: 'Markdown' });
   }
 
   if (userText && !userText.startsWith('/')) {
     try {
-      const thinkingMsg = await bot.sendMessage(chatId, '👁️ *جاري الاستبصار برقي...*');
+      const thinkingMsg = await bot.sendMessage(chatId, '👁️ *جاري تحليل البيانات برقي...*');
 
       const response = await axios.post(
         'https://api.groq.com/openai/v1/chat/completions',
@@ -71,7 +72,7 @@ bot.on('message', async (msg) => {
       bot.sendMessage(chatId, response.data.choices[0].message.content, { parse_mode: 'Markdown' });
 
     } catch (err) {
-      bot.sendMessage(chatId, `السلام عليكم ${userName}، نعتذر عن هذا العطل الفني البسيط، جاري معالجته فوراً.`);
+      bot.sendMessage(chatId, `السلام عليكم ${userName}، نعتذر عن هذا التوقف المؤقت، جاري العودة للعمل بأفضل أداء.`);
     }
   }
 });
