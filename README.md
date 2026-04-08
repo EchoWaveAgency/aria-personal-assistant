@@ -1,1 +1,1 @@
-# aria-personal-assistant
+# Horus - EchoWave Strategic AI
