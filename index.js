@@ -124,16 +124,18 @@ bot.on('callback_query', (query) => {
     );
   }
 
-  // ── منيو الدفع ──
+  // -- منيو الدفع --
   else if (action === 'payment_menu') {
     const payMsg =
       `💳 *قنوات الاستثمار الآمن لـ EchoWave:*\n\n` +
       `يرجى اختيار وسيلة الدفع المناسبة:\n\n` +
+      `📱 *محفظة إلكترونية:* \`01144408455\`\n\n` +
       `📌 _بعد الدفع اضغط "تأكيد الدفع" وابعت صورة الإيصال_`;
 
     const payBtns = [
       [{ text: '💳 InstaPay (عمرو)',  url: 'https://ipn.eg/S/amrellaban_83/instapay/7ZsBhb' }],
       [{ text: '💳 InstaPay (آلاء)', url: 'https://ipn.eg/S/alaahassanin2025/instapay/0xMnFV' }],
+      [{ text: '📱 محفظة إلكترونية', callback_data: 'wallet_info' }],
       [{ text: '✅ تأكيد الدفع',      callback_data: 'confirm_payment' }],
       [{ text: '⬅️ عودة للقائمة',    callback_data: 'main_menu' }],
     ];
@@ -143,6 +145,22 @@ bot.on('callback_query', (query) => {
       parse_mode: 'Markdown',
       reply_markup: { inline_keyboard: payBtns },
     });
+  }
+
+  // -- المحفظة الإلكترونية --
+  else if (action === 'wallet_info') {
+    bot.editMessageText(
+      `📱 *المحفظة الإلكترونية — EchoWave:*\n\n` +
+      `الرقم: \`01144408455\`\n\n` +
+      `_انسخ الرقم وافتح تطبيق المحفظة (Vodafone Cash / Orange Cash / Etisalat Cash / WE Pay)_\n\n` +
+      `📌 بعد التحويل اضغط "تأكيد الدفع" وابعت صورة الإيصال`,
+      { chat_id: chatId, message_id: messageId, parse_mode: 'Markdown',
+        reply_markup: { inline_keyboard: [
+          [{ text: '✅ تأكيد الدفع', callback_data: 'confirm_payment' }],
+          [{ text: '⬅️ عودة للدفع',  callback_data: 'payment_menu' }],
+        ]}
+      }
+    );
   }
 
   // ── تأكيد الدفع ──
