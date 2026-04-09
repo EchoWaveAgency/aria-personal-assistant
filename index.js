@@ -3,17 +3,18 @@
 //  المميزات: ترحيب | إشعار أدمن | تسجيل عميل | تأكيد دفع
 // ============================================================
 
+require('dotenv').config();
 const TelegramBot = require('node-telegram-bot-api');
 const fs          = require('fs');
 const path        = require('path');
 
-// ─── الإعدادات ───────────────────────────────────────────────
-const BOT_TOKEN = 'YOUR_BOT_TOKEN_HERE';         // ← حط التوكن بتاعك هنا
+// ─── الإعدادات (من ملف .env) ─────────────────────────────────
+const BOT_TOKEN = process.env.TELEGRAM_TOKEN;
 
-// الأدمنز — كل الإشعارات بتوصل للاتنين
+// الأدمنز — بتوصل الإشعارات للاتنين
 const ADMINS = [
-  { id: 975804661,  name: 'عمرو'  },   // @AMREllaban
-  { id: 1036943414, name: 'آلاء'  },   // allaa hamdy
+  { id: Number(process.env.CHAT_ID),      name: 'عمرو'  },  // @AMREllaban
+  { id: Number(process.env.ALAA_CHAT_ID), name: 'آلاء'  },  // allaa hamdy
 ];
 
 // دالة مساعدة — بتبعت رسالة لكل الأدمنز
